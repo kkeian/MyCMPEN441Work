@@ -152,78 +152,82 @@ void deallocateList(Job *list) {
 		// so last element in linked list will be skipped by while condition
 }
 
+// Printing SJF message
+void printSJFJob(Job *cj) {
+	// Print message needed for SJF output of jobs
+	printf("Shortest Job to Run next is with ID: %i and Time %i\n", cj.Process_ID, cj.Time);
+}
+
 // SJF algorithm
 void *SJF(void *) {
 	// Boilerplate
 	printf("SJF Jobs Order:\n");
 	// To hold sorted jobs
 	Job *jobListCopy;
+	Job *head; // to reference start of copy always
 	// Create a copy of the original Jobs list inside sortedJobs
 	copyLinkedList(firstJob, jobListCopy);
 	
 	// Only need to create space one time for these because
 	// we'll reuse the space here inside while loop
-	Job *currJob = malloc(sizeof(Job));
-	Job *nextJob = malloc(sizeof(Job));
-	Job *prevJob = malloc(sizeof(Job));
+	Job *currJob; // = malloc(sizeof(Job));
+	Job *nextJob; // = malloc(sizeof(Job));
+	Job *prevJob; // = malloc(sizeof(Job));
+	Job *shortestJob; // = malloc(sizeof(Job)); // To store shortest job
 	
 	// Initial values of above vars: head of list copy
-	currJob = jobListCopy;
-	nextJob = jobListCopy;
-	prevJob = jobListCopy;
+	head = jobListCopy;
+	currJob = head;
+	shortestJob = currJob; // set initial value of shortest job = currJob
+	nextJob = currJob;
+	prevJob = currJob;
 	
-	// Output shortest jobs in ascending .Time order
-	while(jobListCopy.next != NULL) { // num Jobs > 1
-		
-	}
-	
-	
-	// Sort list of jobs
-	Job *sortedJobs; // to hold sorted list of jobs
-	
-	// Store head of toSort
-	Job *headToSort = toSort;
-	while(toSort != NULL) { // this loop keeps track of original list
-								// to see if we've evaluated all jobs
-		// Store shortest job, previous job, and current job
-		// Allocate new space for them each time we check for next job to store
-		//  in sorted list so we don't overwrite originals
-		Job *shortestJob = malloc(sizeof(Job)); // To store shortest job
-		// Set currJob to start at current start of list
-		currJob = toSort;
-		shortestJob = currJob; // start shortestJob at start of list
-		prevJob = currJob; // start prevJob at start of list
-		nextJob = currJob.next; // start nextJob pointing to second Job in list
-		// Find shortest job
-		while(currJob.next != NULL) { // Haven't searched whole list
-			if (currJob.Time < shortestJob.Time) { // Found a shorter job
-				shortestJob = currJob; // Update shortest job found
-				nextJob = currJob.next; // Update next job so we can remove job
-					// if it ends up being shortest in remaining list
+	int exitVal = 0; // sentinel for outer loop
+	while(exitVal == 0) {
+		// Output shortest jobs in ascending .Time order
+		while(currJob.next != NULL) { // num Jobs > 1
+			nextJob = currJob.next; // Set nextJob to process
+			if (currJob.Time < shortestJob.Time) { // found shorter job
+				shortestJob = currJob; // Update shortest job to point to currJob
+				// move prevJob pointer forward until at correct position
+				while (prevJob.next != shortestJob) {
+					prevJob = prevJob.next;
+				}
 			}
-			// move to check next job in list
-			currJob = currJob.next;
+			
+			currJob = nextJob; // set curr job == next job
 		}
-		// Create space for new job in sorted list
-		sortedJobs = malloc(sizeof(Job));
-		// Store shortest job information ("copy")
-		sortedJobs.Process_ID = shortestJob.Process_ID;
-		sortedJobs.Time = shortestJob.Time;
-		// Move pointer to next available place in sorted list
-		sortedJobs = sortedJobs.next;
-		// Remove job found, from original list
-		prevJob.next = nextJob; // we point next pointer of job before shortest
-			// found to point to the job after the shortest job we found
-			// This skips over shortestJob effectively removing it from the list
-		toSort = prevJob;
-	}
-	// Store shortest job (longest)
-	sortedJobs.next = currJob;
-	
-	// Print jobs out in order
-	while (sortedJobs.next != NULL) { // haven't found last job
-		// Print out required info
-		printf("Shortest Job to Run next is with ID: %i and Time %i", sortedJobs.Process_ID, sortedJobs.Time);
+		
+		// handle base case of 2 element list when removing 1st elem
+		if (prevJob == jobListCopy && currJob == jobListCopy.next) { // compare addresses
+			// Check if 1st job shorter and set shortestJob accordingly
+			shortestJob = (prevJob.Time <= currJob.Time) ? prevJob : currJob;
+			// Print out required info
+			printSJFJob(shortestJob);
+			// Invert check and store other job in shortestJob
+			shortestJob = (prevJob.Time > currJob.Time) ? prevJob : currJob;
+			// Print out required info
+			printSJFJob(shortestJob);
+			exitVal = 1; // set sentinel to mark loop end
+		} else if (prevJob == jobListCopy && currJob == jobListCopy) {
+			// handle base case of 1 element list
+			// Print out required info
+			printSJFJob(shortestJob);
+			exitVal = 1; // set sentinel to mark loop end
+		} else if (prevJob == shortestJob && currJob == nextJob) {
+			// handle base case of list where we have Job(s) separating shortest
+			// Job and last Job of list
+			// print shortest job
+			printSJFJob(shortestJob);
+			// remove shortest job from list
+			head = shortestJob.next; // set start of list to Job after shortest
+			free(shortestJob); // free memory allocated to shortest job
+		} else {
+			// the recursive case
+			printSJFJob(shortestJob);
+			// skip over shortestJob which is between prevJob and nextJob
+			prevJob.next = nextJob;
+		}
 	}
 
 	// Notify that we're done processing all jobs according to SJF
